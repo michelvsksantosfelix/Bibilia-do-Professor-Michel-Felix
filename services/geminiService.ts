@@ -1,6 +1,12 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
 const STORAGE_KEY_API = 'adma_temp_api_key';
+
+// --- ÁREA DE CONFIGURAÇÃO ---
+// Cole sua chave aqui para que todos os usuários consigam usar o app.
+// Se esta chave exceder a cota, você pode inserir uma nova pelo Painel Admin sem precisar alterar o código.
+const PUBLIC_FALLBACK_KEY = "COLE_SUA_CHAVE_GOOGLE_AISTUDIO_AQUI"; 
+// ----------------------------
 
 export const getStoredApiKey = (): string | null => {
   return localStorage.getItem(STORAGE_KEY_API);
@@ -15,12 +21,26 @@ export const clearStoredApiKey = () => {
 };
 
 const getClient = () => {
+  // 1. Tenta pegar a chave de emergência salva no navegador do Admin/Usuário
   const tempKey = getStoredApiKey();
-  // Use temp key if available, otherwise default env key (which might be empty in this demo context)
-  const key = tempKey || process.env.API_KEY || ""; 
+  
+  // 2. Ordem de preferência: 
+  //    a) Chave salva no LocalStorage (Painel Admin)
+  //    b) Variável de Ambiente do Vite (Vercel)
+  //    c) Variável de processo (Node/Build)
+  //    d) Chave fixa no código (Fallback para usuários comuns)
+  let key = tempKey || 
+            (import.meta as any).env?.VITE_API_KEY || 
+            process.env.API_KEY || 
+            PUBLIC_FALLBACK_KEY;
+
+  // Limpeza caso a chave seja o placeholder
+  if (key === "COLE_SUA_CHAVE_GOOGLE_AISTUDIO_AQUI") {
+      key = "";
+  }
   
   if (!key) {
-    throw new Error("API Key não configurada. Por favor, adicione uma chave no painel Admin.");
+    throw new Error("API Key não configurada. O Admin precisa configurar uma chave no código ou no Painel.");
   }
   return new GoogleGenAI({ apiKey: key });
 };
@@ -34,7 +54,6 @@ export const generateContent = async (
     const ai = getClient();
     
     // Using gemini-2.5-flash as requested (free tier friendly)
-    // Fallback to 2.0-flash if needed, but 2.5 is standard now
     const modelId = "gemini-2.5-flash"; 
     
     const config: any = {
@@ -67,7 +86,7 @@ export const generateContent = async (
     console.error("Gemini Error:", error);
     // Handle 429 (Too Many Requests) or Quota Exceeded specifically
     if (error.message?.includes("429") || error.message?.includes("Quota") || error.status === 429) {
-        throw new Error("Limite da API Gratuita excedido. Vá em Admin > Chave de Emergência e insira uma nova chave.");
+        throw new Error("Limite da API excedido. O Admin precisa inserir uma nova chave de emergência.");
     }
     throw error;
   }
