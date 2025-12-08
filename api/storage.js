@@ -23,9 +23,14 @@ export default async function handler(request, response) {
     const { method } = request;
     const body = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
 
+    // --- OPERAÇÃO DE TESTE (PING) ---
+    if (method === 'POST' && body.action === 'ping') {
+        // Tenta escrever e ler para garantir que o banco está vivo
+        await kv.set('adma_ping', 'pong');
+        return response.status(200).json({ status: 'ok', message: 'Vercel KV Conectado' });
+    }
+
     // --- OPERAÇÃO DE LISTAGEM / FILTRO (GET) ---
-    // Como estamos migrando de localStorage array, vamos simular lendo a lista inteira da chave
-    // Em um app maior, usaríamos chaves individuais, mas para manter compatibilidade:
     if (method === 'POST' && body.action === 'list') {
         const { collection } = body;
         const data = await kv.get(`adma_${collection}`) || [];
@@ -66,7 +71,7 @@ export default async function handler(request, response) {
 
   } catch (error) {
     console.error("Storage Error:", error);
-    // Fallback: Se der erro no banco (ex: não configurado), retorna erro para o front tratar
+    // Retorna erro formatado para o front saber que é problema de DB
     return response.status(500).json({ error: error.message });
   }
 }

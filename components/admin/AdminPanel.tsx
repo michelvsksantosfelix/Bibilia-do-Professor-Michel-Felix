@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Key, ShieldCheck, RefreshCw, Calendar, Loader2, Save, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, Key, ShieldCheck, RefreshCw, Calendar, Loader2, Save, AlertTriangle, Database, CheckCircle, XCircle } from 'lucide-react';
 import { getStoredApiKey, setStoredApiKey, generateContent } from '../../services/geminiService';
 import { BIBLE_BOOKS, generateVerseKey } from '../../constants';
 import { db } from '../../services/database';
@@ -16,6 +16,7 @@ export default function AdminPanel({ onShowToast, onBack }: any) {
   const [dictVerses, setDictVerses] = useState(1);
   const [devotionalDays, setDevotionalDays] = useState(7);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [dbStatus, setDbStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     const k = getStoredApiKey();
@@ -31,6 +32,27 @@ export default function AdminPanel({ onShowToast, onBack }: any) {
     setApiKey('');
     setStoredApiKey('');
     onShowToast('Chave removida. Usando chave padrão do sistema.', 'info');
+  };
+
+  const testDbConnection = async () => {
+    setDbStatus('testing');
+    try {
+        const res = await fetch('/api/storage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'ping' })
+        });
+        
+        if (res.ok) {
+            setDbStatus('success');
+            onShowToast('Banco de Dados Conectado e Operacional!', 'success');
+        } else {
+            throw new Error('Falha na resposta');
+        }
+    } catch (e) {
+        setDbStatus('error');
+        onShowToast('Erro de Conexão com Banco de Dados.', 'error');
+    }
   };
 
   const generateDictionaryBatch = async () => {
@@ -122,40 +144,73 @@ export default function AdminPanel({ onShowToast, onBack }: any) {
         </div>
 
         {activeTab === 'settings' && (
-            <div className="bg-white p-6 rounded-xl shadow-md border border-[#C5A059]/30">
-                <div className="flex items-center gap-2 mb-4 text-[#8B0000]">
-                    <Key className="w-6 h-6" />
-                    <h2 className="font-cinzel font-bold text-lg">Chave de API Temporária (Backup)</h2>
-                </div>
-                
-                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-                    <p className="font-montserrat text-sm text-yellow-800">
-                        <strong>Como funciona:</strong> A API integrada é gratuita, mas possui limites diários. 
-                        Se o app parar de gerar conteúdo, insira aqui uma nova chave gratuita do Google AI Studio.
+            <div className="space-y-6">
+                 {/* DB Status Section */}
+                 <div className="bg-white p-6 rounded-xl shadow-md border border-[#C5A059]/30">
+                    <div className="flex items-center gap-2 mb-4 text-[#8B0000]">
+                        <Database className="w-6 h-6" />
+                        <h2 className="font-cinzel font-bold text-lg">Status do Banco de Dados</h2>
+                    </div>
+                    <p className="font-montserrat text-sm text-gray-600 mb-4">
+                        Verifique se a conexão com a Vercel KV está ativa para garantir que os dados sejam salvos para todos os usuários.
                     </p>
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-xs text-yellow-900 underline mt-2 block font-bold">
-                        Criar chave gratuita no Google AI Studio
-                    </a>
+                    <button 
+                        onClick={testDbConnection} 
+                        disabled={dbStatus === 'testing'}
+                        className={`w-full py-3 rounded font-bold font-cinzel flex justify-center items-center gap-2 border transition-all ${
+                            dbStatus === 'success' ? 'bg-green-100 text-green-700 border-green-300' :
+                            dbStatus === 'error' ? 'bg-red-100 text-red-700 border-red-300' :
+                            'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                        }`}
+                    >
+                        {dbStatus === 'testing' ? <Loader2 className="animate-spin" /> : 
+                         dbStatus === 'success' ? <CheckCircle className="w-5 h-5" /> : 
+                         dbStatus === 'error' ? <XCircle className="w-5 h-5" /> : 
+                         <RefreshCw className="w-5 h-5" />}
+                        
+                        {dbStatus === 'testing' ? 'Testando Conexão...' : 
+                         dbStatus === 'success' ? 'Conexão Estabelecida!' : 
+                         dbStatus === 'error' ? 'Falha na Conexão' : 
+                         'Testar Conexão com Vercel'}
+                    </button>
                 </div>
 
-                <label className="block font-montserrat text-sm font-bold text-gray-700 mb-2">Sua Chave de API:</label>
-                <input 
-                    type="text" 
-                    value={apiKey} 
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="Cole a chave começando com AIza..."
-                    className="w-full p-3 border border-[#C5A059] rounded mb-4 font-mono text-sm"
-                />
-                
-                <div className="flex gap-2">
-                    <button onClick={handleSaveKey} className="flex-1 bg-[#8B0000] text-white py-3 rounded font-bold font-cinzel hover:bg-[#600018] transition flex justify-center gap-2">
-                        <Save className="w-5 h-5" /> Salvar Chave
-                    </button>
-                    {apiKey && (
-                        <button onClick={handleClearKey} className="px-4 border border-red-500 text-red-500 rounded font-bold hover:bg-red-50">
-                            Limpar
+                {/* API Key Section */}
+                <div className="bg-white p-6 rounded-xl shadow-md border border-[#C5A059]/30">
+                    <div className="flex items-center gap-2 mb-4 text-[#8B0000]">
+                        <Key className="w-6 h-6" />
+                        <h2 className="font-cinzel font-bold text-lg">Chave de API Temporária (Backup)</h2>
+                    </div>
+                    
+                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                        <p className="font-montserrat text-sm text-yellow-800">
+                            <strong>Como funciona:</strong> A API integrada é gratuita, mas possui limites diários. 
+                            Se o app parar de gerar conteúdo, insira aqui uma nova chave gratuita do Google AI Studio.
+                        </p>
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-xs text-yellow-900 underline mt-2 block font-bold">
+                            Criar chave gratuita no Google AI Studio
+                        </a>
+                    </div>
+
+                    <label className="block font-montserrat text-sm font-bold text-gray-700 mb-2">Sua Chave de API:</label>
+                    <input 
+                        type="text" 
+                        value={apiKey} 
+                        onChange={(e) => setApiKey(e.target.value)}
+                        placeholder="Cole a chave começando com AIza..."
+                        className="w-full p-3 border border-[#C5A059] rounded mb-4 font-mono text-sm"
+                    />
+                    
+                    <div className="flex gap-2">
+                        <button onClick={handleSaveKey} className="flex-1 bg-[#8B0000] text-white py-3 rounded font-bold font-cinzel hover:bg-[#600018] transition flex justify-center gap-2">
+                            <Save className="w-5 h-5" /> Salvar Chave
                         </button>
-                    )}
+                        {apiKey && (
+                            <button onClick={handleClearKey} className="px-4 border border-red-500 text-red-500 rounded font-bold hover:bg-red-50">
+                                Limpar
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         )}
