@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    // Aumenta o limite do aviso para 1500kb para não assustar com warnings
+    // Aumenta o limite do aviso para 1500kb para evitar warnings desnecessários no deploy
     chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
