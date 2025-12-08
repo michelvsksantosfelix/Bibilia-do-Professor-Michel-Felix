@@ -61,6 +61,12 @@ export const generateContent = async (
 
     if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
+        
+        // Mensagem específica se faltar a chave no servidor
+        if (response.status === 500 && (errData.error?.includes('API KEY') || errData.error?.includes('Configuração'))) {
+             throw new Error("ERRO DE CONFIGURAÇÃO: O Admin precisa adicionar a 'API_KEY' nas Variáveis de Ambiente da Vercel.");
+        }
+
         throw new Error(errData.error || `Erro no servidor: ${response.status}`);
     }
 

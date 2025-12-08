@@ -21,10 +21,11 @@ export default async function handler(request, response) {
   try {
     const apiKey = process.env.API_KEY;
 
+    // Log para debug no painel da Vercel
     if (!apiKey) {
-         console.error("ERRO: API Key não configurada no ambiente da Vercel.");
+         console.error("CRITICAL ERROR: 'API_KEY' environment variable is missing.");
          return response.status(500).json({ 
-             error: 'Configuração do Servidor incompleta (API KEY ausente).' 
+             error: 'Configuração Incompleta: API KEY não encontrada nas variáveis de ambiente da Vercel.' 
          });
     }
 
@@ -66,7 +67,7 @@ export default async function handler(request, response) {
     return response.status(200).json({ text: aiResponse.text });
 
   } catch (error) {
-    console.error("Erro Gemini:", error);
+    console.error("Gemini API Error:", error);
     return response.status(500).json({ error: error.message || 'Erro interno na IA.' });
   }
 }
