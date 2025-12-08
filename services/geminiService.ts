@@ -2,12 +2,6 @@ import { GoogleGenAI } from "@google/genai";
 
 const STORAGE_KEY_API = 'adma_temp_api_key';
 
-// --- ÁREA DE CONFIGURAÇÃO ---
-// Cole sua chave aqui para que todos os usuários consigam usar o app.
-// Se esta chave exceder a cota, você pode inserir uma nova pelo Painel Admin sem precisar alterar o código.
-const PUBLIC_FALLBACK_KEY = "COLE_SUA_CHAVE_GOOGLE_AISTUDIO_AQUI"; 
-// ----------------------------
-
 export const getStoredApiKey = (): string | null => {
   return localStorage.getItem(STORAGE_KEY_API);
 };
@@ -20,74 +14,74 @@ export const clearStoredApiKey = () => {
   localStorage.removeItem(STORAGE_KEY_API);
 };
 
-const getClient = () => {
-  // 1. Tenta pegar a chave de emergência salva no navegador do Admin/Usuário
-  const tempKey = getStoredApiKey();
-  
-  // 2. Ordem de preferência: 
-  //    a) Chave salva no LocalStorage (Painel Admin)
-  //    b) Variável de Ambiente do Vite (Vercel)
-  //    c) Variável de processo (Node/Build)
-  //    d) Chave fixa no código (Fallback para usuários comuns)
-  let key = tempKey || 
-            (import.meta as any).env?.VITE_API_KEY || 
-            process.env.API_KEY || 
-            PUBLIC_FALLBACK_KEY;
-
-  // Limpeza caso a chave seja o placeholder
-  if (key === "COLE_SUA_CHAVE_GOOGLE_AISTUDIO_AQUI") {
-      key = "";
-  }
-  
-  if (!key) {
-    throw new Error("API Key não configurada. O Admin precisa configurar uma chave no código ou no Painel.");
-  }
-  return new GoogleGenAI({ apiKey: key });
-};
-
-// Generic generation function
+// Função unificada de geração
 export const generateContent = async (
   prompt: string, 
   jsonSchema?: any
 ) => {
   try {
-    const ai = getClient();
+    // 1. Tenta usar chave do Admin salva localmente (Modo Admin com chave própria)
+    const adminKey = getStoredApiKey();
     
-    // Using gemini-2.5-flash as requested (free tier friendly)
-    const modelId = "gemini-2.5-flash"; 
+    if (adminKey) {
+        // --- MODO CLIENT-SIDE (Apenas para o Admin que inseriu sua própria chave) ---
+        const ai = new GoogleGenAI({ apiKey: adminKey });
+        const config: any = {
+            temperature: 0.7,
+            topP: 0.95,
+            topK: 40,
+        };
+
+        if (jsonSchema) {
+            config.responseMimeType = "application/json";
+            config.responseSchema = jsonSchema;
+        }
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{ parts: [{ text: prompt }] }],
+            config: config
+        });
+        
+        return processResponse(response.text, jsonSchema);
+    } 
     
-    const config: any = {
-      temperature: 0.7,
-      topP: 0.95,
-      topK: 40,
-    };
-
-    if (jsonSchema) {
-      config.responseMimeType = "application/json";
-      config.responseSchema = jsonSchema;
-    }
-
-    const response = await ai.models.generateContent({
-      model: modelId,
-      contents: [{ parts: [{ text: prompt }] }],
-      config: config
+    // 2. --- MODO SERVER-SIDE (Usuários Comuns - Seguro) ---
+    // Chama a API da Vercel para esconder a chave
+    const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            prompt: prompt,
+            schema: jsonSchema
+        })
     });
 
-    if (jsonSchema) {
-      // Clean up potential markdown code blocks if the model adds them despite MIME type
-      let text = response.text || "{}";
-      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      return JSON.parse(text);
+    if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `Erro no servidor: ${response.status}`);
     }
 
-    return response.text;
+    const data = await response.json();
+    return processResponse(data.text, jsonSchema);
 
   } catch (error: any) {
     console.error("Gemini Error:", error);
-    // Handle 429 (Too Many Requests) or Quota Exceeded specifically
-    if (error.message?.includes("429") || error.message?.includes("Quota") || error.status === 429) {
-        throw new Error("Limite da API excedido. O Admin precisa inserir uma nova chave de emergência.");
+    if (error.message?.includes("429") || error.message?.includes("Quota")) {
+        throw new Error("Limite da API excedido. Tente novamente mais tarde.");
     }
     throw error;
   }
 };
+
+// Helper para processar o JSON/Texto
+function processResponse(text: string | undefined, jsonSchema: any) {
+    if (jsonSchema) {
+      let cleanText = text || "{}";
+      cleanText = cleanText.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(cleanText);
+    }
+    return text;
+}
