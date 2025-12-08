@@ -22,13 +22,13 @@ export default async function handler(request, response) {
     // --- ÁREA DE SEGURANÇA ---
     // Se a variável da Vercel falhar, o sistema tentará ler a chave abaixo.
     // SUBSTITUA O TEXTO "COLE_SUA_CHAVE_AQUI_NESTE_LUGAR" PELA SUA CHAVE AIza...
-    const BACKUP_KEY = "COLE_SUA_CHAVE_AQUI_NESTE_LUGAR"; 
+    const BACKUP_KEY = "AIzaSyAKsEQwJ43qW-_RAGlShXj0vtq7QSJAYQs"; 
     
     // Tenta pegar do ambiente (Vercel), se não achar, usa o backup
     const apiKey = process.env.API_KEY || BACKUP_KEY;
 
     // Log para debug no painel da Vercel
-    if (!apiKey || apiKey === "" || apiKey === "COLE_SUA_CHAVE_AQUI_NESTE_LUGAR") {
+    if (!apiKey || apiKey === "" || apiKey === "AIzaSyAKsEQwJ43qW-_RAGlShXj0vtq7QSJAYQs") {
          console.error("CRITICAL ERROR: API Key is missing.");
          return response.status(500).json({ 
              error: 'ERRO CRÍTICO: Chave de API não configurada. O Admin precisa adicionar a API_KEY nas Configurações da Vercel ou colar a chave no arquivo api/gemini.js onde indicado.' 
