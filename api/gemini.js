@@ -19,13 +19,18 @@ export default async function handler(request, response) {
   }
 
   try {
-    const apiKey = process.env.API_KEY;
+    // --- ÁREA DE SEGURANÇA ---
+    // Se a variável da Vercel falhar, o sistema tentará ler a chave abaixo.
+    // SUBSTITUA O TEXTO ENTRE ASPAS PELA SUA CHAVE AIza...
+    const BACKUP_KEY = ""; 
+    
+    const apiKey = process.env.API_KEY || BACKUP_KEY;
 
     // Log para debug no painel da Vercel
-    if (!apiKey) {
-         console.error("CRITICAL ERROR: 'API_KEY' environment variable is missing.");
+    if (!apiKey || apiKey === "") {
+         console.error("CRITICAL ERROR: API Key is missing.");
          return response.status(500).json({ 
-             error: 'Configuração Incompleta: API KEY não encontrada nas variáveis de ambiente da Vercel.' 
+             error: 'ERRO CRÍTICO: Chave de API não configurada. O Admin precisa adicionar a API_KEY nas Configurações da Vercel ou no código (api/gemini.js).' 
          });
     }
 
