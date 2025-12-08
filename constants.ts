@@ -1,7 +1,7 @@
 import { BibleBook, ReadingPlan } from './types';
 
 export const CHURCH_NAME = "ASSEMBLEIA DE DEUS MINISTÉRIO ÁGAPE";
-export const APP_VERSION = "v5.0 - Versão Final (Clean Deploy)";
+export const APP_VERSION = "v5.2 - Segurança Atualizada";
 
 export const BIBLE_BOOKS: BibleBook[] = [
   { name: "Gênesis", abbrev: "gn", chapters: 50, testament: "old" },

@@ -30,7 +30,8 @@ Para que o conteúdo gerado pelo Admin (Devocionais, Estudos, Dicionário) seja 
 
 ### 4. Senha de Administrador
 Para acessar o Painel Admin no app (clicando 5 vezes no título "Bíblia ADMA"):
-- Senha: `LoloikiJ10@@`
+- A senha de acesso é definida internamente no código fonte.
+- Caso precise recuperá-la, verifique o arquivo de configuração de segurança no código ou contate o desenvolvedor.
 
 ## 🛠 Tecnologias
 
@@ -38,7 +39,7 @@ Para acessar o Painel Admin no app (clicando 5 vezes no título "Bíblia ADMA"):
 - **Backend (Serverless):** Vercel Functions (`api/gemini.js`, `api/storage.js`).
 - **AI:** Google Gemini 2.5 Flash via `@google/genai`.
 - **Database:** Vercel KV (Redis) + LocalStorage (Híbrido).
-- **Icons:** Lucide React.
+- **Ícones:** Lucide React.
 
 ## 📱 Funcionalidades
 
