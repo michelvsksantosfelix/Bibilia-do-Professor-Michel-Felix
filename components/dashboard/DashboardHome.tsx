@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { BookOpen, GraduationCap, Settings, ShieldCheck, Trophy, Calendar, ListChecks, Mail } from 'lucide-react';
-import { CHURCH_NAME, TOTAL_CHAPTERS } from '../../constants';
+import { BookOpen, GraduationCap, Settings, ShieldCheck, Trophy, Calendar, ListChecks, Mail, CheckCircle2 } from 'lucide-react';
+import { CHURCH_NAME, TOTAL_CHAPTERS, APP_VERSION } from '../../constants';
 import { motion } from 'framer-motion';
 
 interface DashboardProps {
@@ -102,8 +102,11 @@ export default function DashboardHome({ onNavigate, isAdmin, onEnableAdmin, user
             )}
         </div>
         
-        <div className="text-center mt-4 opacity-40 pb-10">
-            <p className="font-cinzel text-xs">Versão 2.5 Flash Edition</p>
+        <div className="text-center mt-4 opacity-60 pb-10 flex flex-col items-center gap-1">
+            <p className="font-cinzel text-xs flex items-center gap-1 text-green-700 font-bold">
+                 <CheckCircle2 className="w-3 h-3"/> {APP_VERSION}
+            </p>
+            <p className="text-[10px] text-gray-400">Sistema Conectado</p>
         </div>
     </div>
   );
